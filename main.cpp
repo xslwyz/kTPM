@@ -64,6 +64,7 @@ void graph_proc() {
 	typedef adjacency_list<vecS, vecS, directedS, VertexProperties> Graph;
 	// Graph instance
 	Graph g;
+	Graph* g_xiaozhi;
 	// Property accessors
 	property_map<Graph, vertex_name_t>::type vertex_lable = get(vertex_name, g);
 	property_map<Graph, vertex_index_t>::type vertex_DFN = get(vertex_index, g);
@@ -128,16 +129,16 @@ void graph_proc() {
 
 typedef property<vertex_name_t, int, property<vertex_index_t, int, property<vertex_index1_t, int> > > VertexProperties;
 typedef adjacency_list<vecS, vecS, directedS, VertexProperties> Graph;
-void Tarjan(Graph * g,int x, int* dfn, int* low, bool* vis, int* stack) {
+void Tarjan(Graph * g,int u, int* dfn, int* low, bool* vis, int* stack) {
 	static int dfs_num = 0;
 	static int top = 0;
 	//DFN[ i ] : 在DFS中该节点被搜索的次序(时间戳)
-	dfn[x] = ++dfs_num;
+	dfn[u] = ++dfs_num;
 	//LOW[ i ] : 为i或i的子树能够追溯到的最早的栈中节点的次序号
 	//当DFN[ i ]==LOW[ i ]时，为i或i的子树可以构成一个强连通分量。
-	low[x] = dfs_num;
-	vis[x] = true;//是否在栈中
-	stack[++top] = x;
+	low[u] = dfs_num;
+	vis[u] = true;//是否在栈中
+	stack[++top] = u;
 	typedef graph_traits<Graph>::edge_descriptor Edge;
 	typedef graph_traits<Graph>::vertex_descriptor Vertex;
 	Graph::out_edge_iterator outedgeIt, outedgeEnd;
@@ -150,15 +151,20 @@ void Tarjan(Graph * g,int x, int* dfn, int* low, bool* vis, int* stack) {
 		temp = v_tar;
 		if (!vis[temp]) {
 			Tarjan(g, x, dfn, low, vis, stack);
-			low[x] = min(low[x], low[temp]);
+			low[u] = min(low[u], low[temp]);
 		}
-		else if (vis[temp])low[x] = min(low[x], dfn[temp]);
+		else if (vis[temp])low[u] = min(low[u], dfn[temp]);
 	}
 	//当dfn[i]==low[i]时，为i或i的子树可以构成一个强连通分量。
-	if (dfn[x] == low[x]) {//构成强连通分量
-		vis[x] = false;
-		color[x] = ++col_num;//染色
-		while (stack[top] != x) {//清空
+	if (dfn[u] == low[u]) {//构成强连通分量
+		vis[u] = false;
+		//这里要建小枝模式
+		//T={VT,ET,ST,Lable}
+		
+		//color[u] = ++col_num;//染色
+		while (stack[top] != u) {//清空
+			
+
 			color[stack[top]] = col_num;
 			vis[stack[top--]] = false;
 		}
