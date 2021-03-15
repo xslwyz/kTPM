@@ -23,14 +23,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="..\..\..\..\Downloads\cit-HepTh\Cit-HepTh.txt">
       <Filter>资源文件</Filter>
     </Text>
     <Text Include="..\..\..\..\Downloads\cit-HepTh\Cit-HepTh-dates.txt">
       <Filter>资源文件</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
