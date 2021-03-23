@@ -1,7 +1,5 @@
 #include "head.h"
 
-
-
 string loc1 = "C:\\Users\\xslwyz\\Downloads\\cit-HepTh\\Cit-HepTh";
 string loc2 = ".txt";
 string loc_fixed = loc1 + "-fixed" + loc2;
@@ -199,7 +197,6 @@ void in_degree_zero_DFS(int u, Graph* g, Tree *tree,TreeNode* currentNode) {
 void graph_proc() {
 	//G=(V,E,L_V)
 	//T={V,E,S_T(T中顶点的数量),L_V}
-
 	//使用bidirectionalS 替换directedS，这样可以使用in_edge、in_degree等，但消耗要增一倍
 	Graph g;
 	property_map<Graph, vertex_name_t>::type vertex_lable = get(vertex_name, g);
