@@ -5,12 +5,12 @@ string loc2 = ".txt";
 string loc = loc1 + loc2;
 string loc_fixed = loc1 + "-fixed" + loc2;
 string loc_dic = loc1 + "-dic" + loc2;
-static int num_xiaozhi = 0;
+static int num_xiaozhi = 0;//小枝的数量
 static int num_max_outEdges = 0;
-
+static int num_v = 0;//图的顶点数
 typedef property<vertex_name_t, int> VertexProperties;
 typedef property<edge_finished_t, int> EdgeProperties;
-typedef adjacency_list<vecS, vecS, directedS, VertexProperties, EdgeProperties> Graph;
+typedef adjacency_list<listS, vecS, directedS, VertexProperties, EdgeProperties> Graph;
 typedef graph_traits<Graph>::edge_descriptor Edge;
 typedef graph_traits<Graph>::vertex_descriptor Vertex;
 
@@ -30,6 +30,7 @@ class Tree
 {
 public:
 	Tree() { root = current = NULL; }; //建立树
+	Tree(int val) { root = current = new TreeNode(val); }
 	void setRoot(int value);
 	TreeNode* getRoot();
 	int toLeft();
@@ -43,9 +44,9 @@ public:
 	int FindParent(TreeNode* t, TreeNode* p);
 };
 
-void Tree::setRoot(int value)
+void Tree::setRoot(int val)
 {
-	root = current = new TreeNode(value);  //建立根结点
+	root = current = new TreeNode(val);  //建立根结点
 }
 
 TreeNode* Tree::getRoot()  //用来查找根,使之成为当前结点
@@ -169,124 +170,47 @@ void preProcess_Cit_Hepth() {
 
 }
 
-void in_degree_zero_DFS(int u, Graph* g, Tree *tree,TreeNode* currentNode) {
+//对入度为零的点，进行DFS处理
+void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode) {
 	Graph::out_edge_iterator outedgeIt, outedgeEnd;
-	tie(outedgeIt, outedgeEnd) = out_edges(u, *g);
-	if (!tree->getRoot()) {
-		tree->setRoot(u);
-		currentNode = tree->getRoot();
-		cout << currentNode->data << endl;
-	}
+	tie(outedgeIt, outedgeEnd) = out_edges(u, g);
+	static hash_set<Edge*> edges_need_remove;//需要在迭代结束后删除的边
 	for (; outedgeIt != outedgeEnd; ++outedgeIt) {
 		Edge e = *outedgeIt;
-		property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, *g);
-		Vertex v_tar = target(e, *g);
-		if (((Tree)*tree).Find(v_tar)| edge_finished1[e])
+		//property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, g);
+		Vertex v_tar = target(e, g);
+		//if (((Tree)*tree).Find(v_tar)| edge_finished1[e])
+		if (tree->Find(v_tar) | edges_need_remove.count(&e))
 			continue;
 		TreeNode* treeNode = new TreeNode(v_tar);
 		//给currentNode->left加兄弟，currentNode->left是不是NULL都无所谓
 		TreeNode* temp = currentNode->left;
 		currentNode->left = treeNode;
 		treeNode->right = temp;
-		//g中标记这条边
-		edge_finished1[e] = 1;
+		//edge_finished1[e] = 1;//g中标记这条边
+		edges_need_remove.insert(&e);
 		in_degree_zero_DFS(v_tar, g, tree, currentNode);
 	}
-
+	if (edges_need_remove.size()) {
+		hash_set<Edge*> ::iterator iter = edges_need_remove.begin();
+		for (; iter != edges_need_remove.end(); iter++) {
+			remove_edge(**iter, g);
+		}
+		edges_need_remove.clear();
+	}
+}
+void graph_dfs(Graph & g,vector <Tree *> & xiaozhi, vector <int> & in_degree,queue <int> & in_degree_zero_queue) {
+	while (in_degree_zero_queue.size()) {
+		int u = in_degree_zero_queue.front();
+		in_degree_zero_queue.pop();
+		Tree* tree = new Tree(u);
+		TreeNode* currentNode = tree->current;
+		in_degree_zero_DFS(u, g, tree, currentNode);
+		xiaozhi.push_back(tree);
+	}	
 }
 
-void graph_proc() {
-	
-	//G=(V,E,L_V)
-	//T={V,E,S_T(T中顶点的数量),L_V}
-	//使用bidirectionalS 替换directedS，这样可以使用in_edge、in_degree等，但消耗要增一倍
-	Graph g;
-	int x, y = 0;
-	string str;
-	ifstream infile;
-	//加入顶点和边
-	infile.open(loc_fixed, ios::in);
-	if (!infile.is_open())
-		cout << "Open file failure" << endl;
-	while (getline(infile, str)) {            // 若未到文件结束一直循环
-		istringstream strstream(str);
-		strstream >> x >> y;
-		add_edge(x, y, g);
-	}
-	infile.close();   //关闭文件
-	int num_v = num_vertices(g);
-	int* dfn= new int[num_v];
-	int* low= new int[num_v];
-	bool* vis= new bool[num_v];
-	int* stack= new int[num_v];
-	Tree** arr_xiaozhi =new Tree *[num_v];
-
-	int* in_degree = new int[num_v];
-	for (int i = 0; i < num_v; i++)
-		in_degree[i] = 0;
-	//加入顶点和边
-	infile.open(loc_fixed, ios::in);
-	if (!infile.is_open())
-		cout << "Open file failure" << endl;
-	while (getline(infile, str)) {            // 若未到文件结束一直循环
-		istringstream strstream(str);
-		strstream >> x >> y;
-		in_degree[y] = in_degree[y] + 1;
-	}
-
-	infile.close();   //关闭文件
-	//Graph::out_edge_iterator outedgeIt, outedgeEnd;
-	//tie(outedgeIt, outedgeEnd) = out_edges(0, g);
-	//for (; outedgeIt != outedgeEnd; ++outedgeIt)
-	//{
-	//	Edge e = *outedgeIt;
-	//	Vertex v = target(e, g);
-	//}
-
-	//遍历所有顶点，将入度为0顶点的全部标记
-	//用bgl太慢了，直接建数组存
-	for (int i = 0; i < num_v; i++) {
-		num_max_outEdges > in_degree[i] ? NULL : num_max_outEdges = in_degree[i];
-	}
-	for (int i = 0; i < num_v; i++) {
-		if (in_degree[i] == 0) {
-			Tree* tree = new Tree();
-			TreeNode* currentNode = NULL;
-			in_degree_zero_DFS(i, &g, tree, currentNode);
-			arr_xiaozhi[num_xiaozhi++] = tree;
-		}
-	}
-	cout << num_xiaozhi << endl;
-	//DFS后，确定一个tarjan的开始点u
-	int u = 0;
-	for(;u< num_v;u++){
-		Graph::out_edge_iterator outedgeIt, outedgeEnd;
-		tie(outedgeIt, outedgeEnd) = out_edges(u, g);
-		Edge e = *outedgeIt;
-		property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, g);
-		for (; outedgeIt != outedgeEnd; ++outedgeIt) {
-			e = *outedgeIt;
-			if (edge_finished1[e])
-				continue;
-			break;
-		}
-		if (outedgeIt != outedgeEnd) {
-			break;
-		}
-		else if(edge_finished1[e]){
-			break;
-		}
-
-	}
-	cout << u << endl;
-	//Tarjan(&g, u, dfn, low, vis, stack, arr_xiaozhi);
-
-	//加入顶点标签vertex_name_t
-	//infile.open("C:\\Users\\xslwyz\\Downloads\\cit-HepTh\\Cit-HepTh-dates.txt", ios::in);
-
-}
-
-void Tarjan(Graph * g,int u, int* dfn, int* low, bool* vis, int* stack,Tree ** arr_xiaozhi) {
+void graph_tarjan(Graph & g, vector<Tree*>& xiaozhi, int& u, vector<int>& dfn, vector<int>& low, vector<int>& vis, vector<int>& stack) {
 	static int dfs_num = 0;
 	static int top = 0;
 	//DFN[ i ] : 在DFS中该节点被搜索的次序(时间戳)
@@ -297,15 +221,15 @@ void Tarjan(Graph * g,int u, int* dfn, int* low, bool* vis, int* stack,Tree ** a
 	vis[u] = true;//是否在栈中
 	stack[++top] = u;
 	Graph::out_edge_iterator outedgeIt, outedgeEnd;
-	tie(outedgeIt, outedgeEnd) = out_edges(0, *g);
+	tie(outedgeIt, outedgeEnd) = out_edges(0, g);
 	int temp = 0;
 	for (; outedgeIt != outedgeEnd; ++outedgeIt)
 	{
 		Edge e = *outedgeIt;
-		Vertex v_tar = target(e, *g);
+		Vertex v_tar = target(e, g);
 		temp = v_tar;
 		if (!vis[temp]) {
-			Tarjan(g, u, dfn, low, vis, stack, arr_xiaozhi);
+			graph_tarjan(g, xiaozhi,u, dfn, low, vis, stack);
 			low[u] = min(low[u], low[temp]);
 		}
 		else if (vis[temp])low[u] = min(low[u], dfn[temp]);
@@ -328,11 +252,96 @@ void Tarjan(Graph * g,int u, int* dfn, int* low, bool* vis, int* stack,Tree ** a
 		//top--;
 	}
 }
+//G=(V,E,L_V)
+//T={V,E,S_T(T中顶点的数量),L_V}
+//使用bidirectionalS 替换directedS，这样可以使用in_edge、in_degree等，但消耗要增一倍
+void graph_proc() {
+	Graph g;
+	int x, y = 0;
+	string str;
+	ifstream infile;
+	infile.open(loc_fixed, ios::in);//加入顶点和边
+	if (!infile.is_open())
+		cout << "Open file failure" << endl;
+	while (getline(infile, str)) {//无视文件末尾空行
+		istringstream strstream(str);
+		strstream >> x >> y;
+		add_edge(x, y, g);
+	}
+	infile.close();   //关闭文件
+	num_v = num_vertices(g);
+	//int num_e = num_edges(g);
+	vector<int> in_degree(num_v, 0);//vector存所有顶点的入度，初始化为0
+	infile.open(loc_fixed, ios::in);//再读取一次，因为第一次读取后，才知道顶点个数num_v
+	if (!infile.is_open())
+		cout << "Open file failure" << endl;
+	while (getline(infile, str)) {
+		istringstream strstream(str);
+		strstream >> x >> y;
+		in_degree[y] = in_degree[y] + 1;
+	}
+	infile.close();   //关闭文件
+	queue<int> in_degree_zero_queue;//统计vector是0的所有顶点
+	for (int i = 0; i < num_v; i++) {
+		if (in_degree[i] == 0)
+			in_degree_zero_queue.push(i);
+	}
+	vector<Tree *> xiaozhi;//存储获得的小枝
+	while (num_edges(g)) {//只要还有边，就重复1.DFS，2.tarjan
+		graph_dfs(g, xiaozhi,in_degree, in_degree_zero_queue);
+		vector<int> dfn(num_v, 0);
+		vector<int> low(num_v, 0);
+		vector<int> vis(num_v, 0);
+		vector<int> stack(num_v, 0);
+		//DFS后，确定一个tarjan的开始点u
+		//这段代码TODO
+		int u = 0;
+		for (; u < num_v; u++) {
+			Graph::out_edge_iterator outedgeIt, outedgeEnd;
+			tie(outedgeIt, outedgeEnd) = out_edges(u, g);
+			Edge e = *outedgeIt;
+			property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, g);
+			for (; outedgeIt != outedgeEnd; ++outedgeIt) {
+				e = *outedgeIt;
+				if (edge_finished1[e])
+					continue;
+				break;
+			}
+			if (outedgeIt != outedgeEnd) {
+				break;
+			}
+			else if (edge_finished1[e]) {
+				break;
+			}
+
+		}
+		cout << u << endl;
+		graph_tarjan(g, xiaozhi, u, dfn, low, vis, stack);
+	
+	}
+
+	//加入顶点标签vertex_name_t
+	//infile.open("C:\\Users\\xslwyz\\Downloads\\cit-HepTh\\Cit-HepTh-dates.txt", ios::in);
+
+}
 
 
+void test() {
+	Graph g;
+	int x, y = 0;
+	add_edge(0, 1, g);
+	Graph::out_edge_iterator outedgeIt, outedgeEnd;
+	tie(outedgeIt, outedgeEnd) = out_edges(0, g);
+	remove_vertex(0, g);
+	int num_v = num_vertices(g);
+	int num_e = num_edges(g);
+	cout << num_v << endl;
+	cout << num_e << endl;
+
+}
 
 int main(int argc, char* argv[]){
-	preProcess_Cit_Hepth();
+	//preProcess_Cit_Hepth();
 	graph_proc();
 	return 0;
 }
