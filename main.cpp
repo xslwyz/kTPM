@@ -1,7 +1,8 @@
 #include "head.h"
 
-string loc1 = "C:\\Users\\xslwyz\\Downloads\\cit-HepTh\\Cit-HepTh";
+string loc1 = "D:\\cit-HepTh\\Cit-HepTh";
 string loc2 = ".txt";
+string loc = loc1 + loc2;
 string loc_fixed = loc1 + "-fixed" + loc2;
 string loc_dic = loc1 + "-dic" + loc2;
 static int num_xiaozhi = 0;
@@ -123,7 +124,7 @@ int Tree::Find(TreeNode* p, int target)
 void preProcess_Cit_Hepth() {
 	ifstream infile;
 	//加入顶点和边
-	infile.open(loc1+loc2, ios::in);
+	infile.open(loc, ios::in);
 	ofstream outfile_fixed;
 	ofstream outfile_dic;
 	outfile_fixed.open(loc_fixed,ios::out|ios::trunc);
@@ -195,11 +196,11 @@ void in_degree_zero_DFS(int u, Graph* g, Tree *tree,TreeNode* currentNode) {
 }
 
 void graph_proc() {
+	
 	//G=(V,E,L_V)
 	//T={V,E,S_T(T中顶点的数量),L_V}
 	//使用bidirectionalS 替换directedS，这样可以使用in_edge、in_degree等，但消耗要增一倍
 	Graph g;
-	property_map<Graph, vertex_name_t>::type vertex_lable = get(vertex_name, g);
 	int x, y = 0;
 	string str;
 	ifstream infile;
@@ -331,7 +332,7 @@ void Tarjan(Graph * g,int u, int* dfn, int* low, bool* vis, int* stack,Tree ** a
 
 
 int main(int argc, char* argv[]){
-	//preProcess_Cit_Hepth();
+	preProcess_Cit_Hepth();
 	graph_proc();
 	return 0;
 }
