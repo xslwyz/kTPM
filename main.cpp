@@ -169,18 +169,17 @@ void preProcess_Cit_Hepth() {
 	outfile_dic.close();
 
 }
-
+static std::unordered_set<Edge*> edges_need_remove;//需要在迭代结束后删除的边
 //对入度为零的点，进行DFS处理
-void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode) {
-	Graph::out_edge_iterator outedgeIt, outedgeEnd;
+void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode, vector <int>& in_degree, queue <int>& in_degree_zero_queue) {
+	Graph::out_edge_iterator outedgeIt, outedgeEnd,iterTemp;
 	tie(outedgeIt, outedgeEnd) = out_edges(u, g);
-	static hash_set<Edge*> edges_need_remove;//需要在迭代结束后删除的边
-	for (; outedgeIt != outedgeEnd; ++outedgeIt) {
-		Edge e = *outedgeIt;
+	while (outedgeIt != outedgeEnd) {
+		iterTemp = outedgeIt++;
 		//property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, g);
-		Vertex v_tar = target(e, g);
+		Vertex v_tar = target(*iterTemp, g);
 		//if (((Tree)*tree).Find(v_tar)| edge_finished1[e])
-		if (tree->Find(v_tar) | edges_need_remove.count(&e))
+		if (tree->Find(v_tar))
 			continue;
 		TreeNode* treeNode = new TreeNode(v_tar);
 		//给currentNode->left加兄弟，currentNode->left是不是NULL都无所谓
@@ -188,69 +187,62 @@ void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode) {
 		currentNode->left = treeNode;
 		treeNode->right = temp;
 		//edge_finished1[e] = 1;//g中标记这条边
-		edges_need_remove.insert(&e);
-		in_degree_zero_DFS(v_tar, g, tree, currentNode);
-	}
-	if (edges_need_remove.size()) {
-		hash_set<Edge*> ::iterator iter = edges_need_remove.begin();
-		for (; iter != edges_need_remove.end(); iter++) {
-			remove_edge(**iter, g);
+		//edges_need_remove.insert(*iterTemp);
+		remove_edge(*iterTemp, g);
+		//这里要判断删去边后，这个顶点的入度是否变为0，如果变为0，则需要将其加入in_degree_zero_queue
+		in_degree[v_tar] = in_degree[v_tar] - 1;
+		if (in_degree[v_tar] == 0) {
+			in_degree_zero_queue.push(v_tar);
 		}
-		edges_need_remove.clear();
+		in_degree_zero_DFS(v_tar, g, tree, currentNode, in_degree, in_degree_zero_queue);
 	}
 }
 void graph_dfs(Graph & g,vector <Tree *> & xiaozhi, vector <int> & in_degree,queue <int> & in_degree_zero_queue) {
-	while (in_degree_zero_queue.size()) {
+	while (in_degree_zero_queue.size()) {//将队列里元素都处理完，就退出并进行tarjan
 		int u = in_degree_zero_queue.front();
-		in_degree_zero_queue.pop();
-		Tree* tree = new Tree(u);
+		in_degree_zero_queue.pop();//取第一个，并pop出
+		Tree* tree = new Tree(u);//以头元素为根，建树
 		TreeNode* currentNode = tree->current;
-		in_degree_zero_DFS(u, g, tree, currentNode);
-		xiaozhi.push_back(tree);
+		in_degree_zero_DFS(u, g, tree, currentNode, in_degree,in_degree_zero_queue);//当前指针指向根，然后进入循环方法in_degree_zero_DFS
+		xiaozhi.push_back(tree);//处理完后，将树加入
 	}	
 }
 
-void graph_tarjan(Graph & g, vector<Tree*>& xiaozhi, int& u, vector<int>& dfn, vector<int>& low, vector<int>& vis, vector<int>& stack) {
-	static int dfs_num = 0;
-	static int top = 0;
-	//DFN[ i ] : 在DFS中该节点被搜索的次序(时间戳)
-	dfn[u] = ++dfs_num;
-	//LOW[ i ] : 为i或i的子树能够追溯到的最早的栈中节点的次序号
+void graph_tarjan(Graph & g, vector<Tree*>& xiaozhi, int u, std::unordered_map<int, int>& dfn,
+	std::unordered_map<int, int>& low,	stack<int>& sta, 
+	std::unordered_set<int>& in_stack, int dfs_num = 0, int top = 0) {
+	dfn.insert(pair<int, int>(u, ++dfs_num));//DFN:在DFS中该节点被搜索的次序
+	low.insert(pair<int, int>(u, dfs_num));//LOW:为i或i的子树能够追溯到的最早的栈中节点的次序号
 	//当DFN[ i ]==LOW[ i ]时，为i或i的子树可以构成一个强连通分量。
-	low[u] = dfs_num;
-	vis[u] = true;//是否在栈中
-	stack[++top] = u;
-	Graph::out_edge_iterator outedgeIt, outedgeEnd;
-	tie(outedgeIt, outedgeEnd) = out_edges(0, g);
-	int temp = 0;
-	for (; outedgeIt != outedgeEnd; ++outedgeIt)
-	{
-		Edge e = *outedgeIt;
-		Vertex v_tar = target(e, g);
-		temp = v_tar;
-		if (!vis[temp]) {
-			graph_tarjan(g, xiaozhi,u, dfn, low, vis, stack);
-			low[u] = min(low[u], low[temp]);
+	sta.push(u);
+	in_stack.insert(u);
+	Graph::out_edge_iterator outedgeIt, outedgeEnd,iterTemp;
+	tie(outedgeIt, outedgeEnd) = out_edges(u, g);
+	while (outedgeIt != outedgeEnd) {
+		iterTemp = outedgeIt++;
+		Vertex v = target(*iterTemp, g);
+		if (!dfn.count(v)) {//如果未被访问过就不会在DFN中有值
+			graph_tarjan(g, xiaozhi, v, dfn, low, sta, in_stack,dfs_num,top);
+			low[u] = min(low[u], low[v]);
 		}
-		else if (vis[temp])low[u] = min(low[u], dfn[temp]);
+		else if (in_stack.count(v)) {//如果v在栈中
+			low[u] = min(low[u], dfn[v]);
+		}
+		if (dfn[u] == low[u]) {
+			
+			ComponentNumber++;
+			do {
+				j = STACK[top--];
+				InStack[j] = false;
+				Component[ComponentNumber].
+					push_back(j);
+				InComponent[j] = ComponentNumber;
+			}         while (j != i);
+		
+		}
+	
 	}
-	//当dfn[i]==low[i]时，为i或i的子树可以构成一个强连通分量。
-	if (dfn[u] == low[u]) {//构成强连通分量
-		//vis[u] = false;
-		////这里要建小枝模式
-		////T={VT,ET,ST,Lable}
-		//Tree *tree=new Tree();
-		////color[u] = ++col_num;//染色
-		//while (stack[top] != u) {//清空
-		//	//add_edge(stack[top - 1], stack[top],*tree);
-		//	vis[stack[top--]] = false;
-		//}
-		//if (num_vertices(*gg)) {
-		//	arr_xiaozhi[num_xiaozhi] = gg;
-		//	num_xiaozhi++;
-		//}
-		//top--;
-	}
+
 }
 //G=(V,E,L_V)
 //T={V,E,S_T(T中顶点的数量),L_V}
@@ -287,37 +279,32 @@ void graph_proc() {
 			in_degree_zero_queue.push(i);
 	}
 	vector<Tree *> xiaozhi;//存储获得的小枝
+	int tarjan_begin_i = 0;//第一个in_degree!=0的点的位置
 	while (num_edges(g)) {//只要还有边，就重复1.DFS，2.tarjan
+		cout << num_vertices(g) << endl;
+		cout << num_edges(g) << endl;
+		cout << xiaozhi.size() << endl;
 		graph_dfs(g, xiaozhi,in_degree, in_degree_zero_queue);
-		vector<int> dfn(num_v, 0);
-		vector<int> low(num_v, 0);
-		vector<int> vis(num_v, 0);
-		vector<int> stack(num_v, 0);
-		//DFS后，确定一个tarjan的开始点u
-		//这段代码TODO
-		int u = 0;
-		for (; u < num_v; u++) {
-			Graph::out_edge_iterator outedgeIt, outedgeEnd;
-			tie(outedgeIt, outedgeEnd) = out_edges(u, g);
-			Edge e = *outedgeIt;
-			property_map<Graph, edge_finished_t>::type edge_finished1 = get(edge_finished, g);
-			for (; outedgeIt != outedgeEnd; ++outedgeIt) {
-				e = *outedgeIt;
-				if (edge_finished1[e])
-					continue;
-				break;
+		cout << num_vertices(g)<< endl;
+		cout << num_edges(g) << endl;
+		cout << xiaozhi.size() << endl;
+		std::unordered_map<int, int> dfn;
+		std::unordered_map<int, int> low;
+		std::unordered_map<int, int> vis;
+		stack<int> sta;
+		std::unordered_set<int> in_stack;
+		while (tarjan_begin_i < num_v) {//DFS结束了，in_degree=0的点都遍历完了
+			if (in_degree[tarjan_begin_i] > 0) {//确定一个tarjan开始的点tarjan_begin_i
+				//tarjan TODO
+				int dfs_num = 0;
+				int top = 0;
+				graph_tarjan(g, xiaozhi, tarjan_begin_i, dfn, low, sta,in_stack);
+				tarjan_begin_i++;//这个点处理完之后，他的入度一定为0了
+				break;//完成后直接退出循环，然后DFS
 			}
-			if (outedgeIt != outedgeEnd) {
-				break;
-			}
-			else if (edge_finished1[e]) {
-				break;
-			}
-
+			tarjan_begin_i++;
 		}
-		cout << u << endl;
-		graph_tarjan(g, xiaozhi, u, dfn, low, vis, stack);
-	
+		cout << tarjan_begin_i << endl;
 	}
 
 	//加入顶点标签vertex_name_t
