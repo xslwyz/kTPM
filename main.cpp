@@ -312,8 +312,56 @@ void graph_proc() {
 	outfile_log.close();
 }
 
-void stack_tc(Graph& g,int u) {
+typedef vector<int> Component;
 
+
+vector<int> root(num_v,0);//初始化root，一共num_v长度，值均为0
+stack<Component*> Cstack;
+vector<Component*> Comp(num_v,NULL);//初始化Comp，一共num_v长度，值均为NULL
+std::unordered_set<Component*> Succ;
+stack<int> vstack;
+vector<int> savedHeight(num_v,0);//初始化savedHeight，一共num_v长度，值均为0
+vector<int> visited(num_v,0);
+void stack_tc(Graph& g,int u) {
+	root[u] = u;
+	Comp[u] = NULL;
+	vstack.push(u);
+	savedHeight[u] = Cstack.size();
+	Graph::out_edge_iterator iter1, iter2;
+	tie(iter1, iter2) = out_edges(u, g);
+	while (iter1 != iter2) {
+		Vertex v = target(*iter1, g);
+		if (visited[v] != 0) {
+			stack_tc(g,v);
+		}
+		if (Comp[v] == NULL) {
+			root[u] = min(root[u], root[v]);
+		}
+		//else if (u, v) is not a forward edge then
+		//    Cstack.push(Comp[v]);
+	}
+	if (root[u] == u) {
+		Component* C = new Component();
+		if (vstack.top() != u) {
+			Succ[C] = { C };
+		}
+		else {
+			Succ[C] = {};
+		}
+		sort the Components in Cstack between savedHeight[u] and Cstack.size()
+			into a topological orderand eliminate duplicates;//一种拓扑排序并去重
+		while (Cstack.size() != savedHeight[u]) {
+			Component* X = Cstack.top();
+			Cstack.pop();
+			if X not∈ Succ(C) then Succ(C) := Succ(C) ∪ { X } ∪ Succ(X);
+		}
+		do {
+			v = vstack.top();
+			vstack.pop();
+			Comp[v] = C;
+			insert v into Component C;
+		} while (v != u);
+	}
 
 
 
@@ -340,14 +388,9 @@ void test() {
 	vector<int> vis(num_v,0);
 	while (u < num_v) {
 		if(vis[u]==0)
-		stack_tc(g, u);
+			stack_tc(g, u);
+		u++;
 	}
-
-
-
-
-
-
 }
 
 int main(int argc, char* argv[]){
