@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="head.h" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="源.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\..\Downloads\cit-HepTh\Cit-HepTh-dates.txt" />

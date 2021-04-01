@@ -25,7 +25,7 @@ public:
 	int lable;
 	TreeNode* left;
 	TreeNode* right;  //子女和兄弟指针
-	TreeNode(int value = 0,int lable=0, TreeNode* l = NULL, TreeNode* r = NULL) :value(value), lable(lable), left(l), right(r) {}//构造函数
+	TreeNode(int value = 0, int lable = 0, TreeNode* l = NULL, TreeNode* r = NULL) :value(value), lable(lable), left(l), right(r) {}//构造函数
 };
 class Tree
 {
@@ -42,14 +42,13 @@ public:
 	int Find(int target);
 	int Find(TreeNode* p, int target);
 	int FindParent(TreeNode* t, TreeNode* p);
-	void sortSubset_labelBased() {}
 };
 //BFS，按标签给子集归类
 void Tree::sortSubset_labelBased() {
 	//TODO BFS
 	if (root == NULL) return;
 	std::unordered_map<int, vector<TreeNode*>> subset_labelBased;//label, {v1,v2,...,vi}
-	auto curr=root;
+	auto curr = root;
 	stack<TreeNode*> stack;
 	stack.push(curr);
 	while (!stack.empty()) {
@@ -66,7 +65,7 @@ void Tree::sortSubset_labelBased() {
 			subset_labelBased.insert(pair<int, vector<TreeNode*>>(curr->lable, { curr }));
 		}
 	}
-	
+
 }
 
 void Tree::setRoot(int val)
@@ -153,7 +152,7 @@ void preProcess_Cit_Hepth() {
 	infile.open(loc, ios::in);
 	ofstream outfile_fixed;
 	ofstream outfile_dic;
-	outfile_fixed.open(loc_fixed,ios::out|ios::trunc);
+	outfile_fixed.open(loc_fixed, ios::out | ios::trunc);
 	outfile_dic.open(loc_dic, ios::out | ios::trunc);
 	if (!infile.is_open())
 		cout << "Open file failure" << endl;
@@ -165,7 +164,7 @@ void preProcess_Cit_Hepth() {
 	int index_dic = 0;
 	map<string, int>::iterator finder;
 
-	while (getline(infile,str)) {            // 若未到文件结束一直循环
+	while (getline(infile, str)) {            // 若未到文件结束一直循环
 		if (begin > 1) {
 			begin--;
 			continue;
@@ -176,7 +175,7 @@ void preProcess_Cit_Hepth() {
 		finder = dic.find(u);
 		if (finder == dic.end()) {
 			dic.insert(pair<string, int>(u, index_dic));
-			outfile_dic << u << '\t'<<index_dic<<endl;
+			outfile_dic << u << '\t' << index_dic << endl;
 			index_dic++;
 		}
 
@@ -186,7 +185,7 @@ void preProcess_Cit_Hepth() {
 			outfile_dic << v << '\t' << index_dic << endl;
 			index_dic++;
 		}
-		outfile_fixed << dic[u]<< '\t' << dic[v]<< endl;
+		outfile_fixed << dic[u] << '\t' << dic[v] << endl;
 
 	}
 	infile.close();   //关闭文件
@@ -197,7 +196,7 @@ void preProcess_Cit_Hepth() {
 
 //对入度为零的点，进行DFS处理
 void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode, vector <int>& in_degree, queue <int>& in_degree_zero_queue) {
-	Graph::out_edge_iterator outedgeIt, outedgeEnd,iterTemp;
+	Graph::out_edge_iterator outedgeIt, outedgeEnd, iterTemp;
 	tie(outedgeIt, outedgeEnd) = out_edges(u, g);
 	Vertex v;
 	while (outedgeIt != outedgeEnd) {
@@ -218,7 +217,7 @@ void in_degree_zero_DFS(int u, Graph& g, Tree* tree, TreeNode* currentNode, vect
 		in_degree_zero_DFS(v, g, tree, currentNode, in_degree, in_degree_zero_queue);
 	}
 }
-void graph_dfs(Graph & g,vector <Tree *> & twig, vector <int> & in_degree,queue <int> & in_degree_zero_queue) {
+void graph_dfs(Graph& g, vector <Tree*>& twig, vector <int>& in_degree, queue <int>& in_degree_zero_queue) {
 	while (in_degree_zero_queue.size()) {//将队列里元素都处理完，就退出并进行tarjan
 		int u = in_degree_zero_queue.front();
 		if (out_edges(u, g).first == out_edges(u, g).second) {//如果没出边了才POP出，不然会出现提前结束
@@ -227,13 +226,13 @@ void graph_dfs(Graph & g,vector <Tree *> & twig, vector <int> & in_degree,queue 
 		}
 		Tree* tree = new Tree(u);//以头元素为根，建树
 		TreeNode* currentNode = tree->current;
-		in_degree_zero_DFS(u, g, tree, currentNode, in_degree,in_degree_zero_queue);//当前指针指向根，然后进入循环方法in_degree_zero_DFS
+		in_degree_zero_DFS(u, g, tree, currentNode, in_degree, in_degree_zero_queue);//当前指针指向根，然后进入循环方法in_degree_zero_DFS
 		twig.push_back(tree);//处理完后，将树加入
-	}	
+	}
 }
 
-void graph_tarjan(Graph & g, vector<Tree*>& twig, int u, std::unordered_map<int, int>& dfn,
-	std::unordered_map<int, int>& low,	stack<int>& sta, 
+void graph_tarjan(Graph& g, vector<Tree*>& twig, int u, std::unordered_map<int, int>& dfn,
+	std::unordered_map<int, int>& low, stack<int>& sta,
 	std::unordered_set<int>& in_stack, queue <int>& in_degree_zero_queue, int dfs_num = 0) {
 	Vertex v;
 	dfn.insert(pair<int, int>(u, ++dfs_num));//DFN:在DFS中该节点被搜索的次序
@@ -241,13 +240,13 @@ void graph_tarjan(Graph & g, vector<Tree*>& twig, int u, std::unordered_map<int,
 	//当DFN[ i ]==LOW[ i ]时，为i或i的子树可以构成一个强连通分量。
 	sta.push(u);
 	in_stack.insert(u);
-	Graph::out_edge_iterator outedgeIt, outedgeEnd,iterTemp;
+	Graph::out_edge_iterator outedgeIt, outedgeEnd, iterTemp;
 	tie(outedgeIt, outedgeEnd) = out_edges(u, g);
 	while (outedgeIt != outedgeEnd) {
 		iterTemp = outedgeIt++;
 		v = target(*iterTemp, g);
 		if (!dfn.count(v)) {//如果未被访问过就不会在DFN中有值
-			graph_tarjan(g, twig, v, dfn, low, sta, in_stack,in_degree_zero_queue,dfs_num);
+			graph_tarjan(g, twig, v, dfn, low, sta, in_stack, in_degree_zero_queue, dfs_num);
 			low[u] = min(low[u], low[v]);
 		}
 		else if (in_stack.count(v)) {//如果v在栈中
@@ -278,7 +277,7 @@ void graph_proc() {
 	while (getline(infile, str)) {//无视文件末尾空行
 		istringstream strstream(str);
 		strstream >> x >> y;
-		if(x!=y)
+		if (x != y)
 			add_edge(x, y, g);
 	}
 	infile.close();   //关闭文件
@@ -304,7 +303,7 @@ void graph_proc() {
 	while (num_edges(g)) {//只要还有边，就重复1.DFS，2.tarjan
 		cout << num_edges(g) << endl;
 		cout << twig.size() << endl;
-		graph_dfs(g, twig,in_degree, in_degree_zero_queue);
+		graph_dfs(g, twig, in_degree, in_degree_zero_queue);
 		//cout << num_edges(g) << endl;
 		//cout << twig.size() << endl;
 		std::unordered_map<int, int> dfn;
@@ -314,7 +313,7 @@ void graph_proc() {
 		while (tarjan_begin_i < num_v) {//DFS结束了，in_degree=0的点都遍历完了
 			if (in_degree[tarjan_begin_i] > 0) {//确定一个tarjan开始的点tarjan_begin_i
 				//tarjan TODO
-				graph_tarjan(g, twig, tarjan_begin_i, dfn, low, sta,in_stack, in_degree_zero_queue);
+				graph_tarjan(g, twig, tarjan_begin_i, dfn, low, sta, in_stack, in_degree_zero_queue);
 				tarjan_begin_i++;//这个点处理完之后，他的出度一定为0了，没有价值了
 				break;//完成后直接退出循环，然后DFS
 			}
@@ -327,9 +326,9 @@ void graph_proc() {
 	ofstream outfile_log;
 	outfile_log.open(loc_log, ios::out | ios::trunc);
 	Graph::edge_iterator iter1, iter2;
-	tie(iter1,iter2)=edges(g);
+	tie(iter1, iter2) = edges(g);
 	while (iter1 != iter2) {
-		outfile_log << source(*iter1,g) << '\t' << target(*iter1,g) << endl;
+		outfile_log << source(*iter1, g) << '\t' << target(*iter1, g) << endl;
 		iter1++;
 	}
 	outfile_log.close();
@@ -349,7 +348,7 @@ public:
 		}
 		return true;
 	}
-	bool if_succ_include(std::unordered_set<int> & set_x) {//this是否全部包含C
+	bool if_succ_include(std::unordered_set<int>& set_x) {//this是否全部包含C
 		std::unordered_set<int>::iterator iter = set_x.begin();
 		while (iter != set_x.end()) {
 			if (!succ_set.count(*iter))
@@ -360,13 +359,13 @@ public:
 	}
 };
 
-vector<int> root(num_v,0);//初始化root，一共num_v长度，值均为0
+vector<int> root(num_v, 0);//初始化root，一共num_v长度，值均为0
 stack<Component*> Cstack;
-vector<Component*> Comp(num_v,NULL);//初始化Comp，一共num_v长度，值均为NULL
+vector<Component*> Comp(num_v, NULL);//初始化Comp，一共num_v长度，值均为NULL
 stack<int> vstack;
-vector<int> savedHeight(num_v,0);//初始化savedHeight，一共num_v长度，值均为0
-vector<int> visited(num_v,0);
-void stack_tc(Graph& g,int u) {
+vector<int> savedHeight(num_v, 0);//初始化savedHeight，一共num_v长度，值均为0
+vector<int> visited(num_v, 0);
+void stack_tc(Graph& g, int u) {
 	root[u] = u;
 	Comp[u] = NULL;
 	vstack.push(u);
@@ -376,12 +375,12 @@ void stack_tc(Graph& g,int u) {
 	while (iter1 != iter2) {
 		Vertex v = target(*iter1, g);
 		if (visited[v] != 0) {
-			stack_tc(g,v);
+			stack_tc(g, v);
 		}
 		if (Comp[v] == NULL) {
 			root[u] = min(root[u], root[v]);
 		}
-		
+
 		//else if (u, v) is not a forward edge then
 		//    Cstack.push(Comp[u]);
 	}
@@ -390,7 +389,7 @@ void stack_tc(Graph& g,int u) {
 		Component* C = new Component();
 		Component* C_succ = new Component();
 		if (vstack.top() != u) {
-			C->succ_set =C->comp_set;
+			C->succ_set = C->comp_set;
 		}
 		else {
 			C->succ_set = {};
@@ -547,7 +546,7 @@ int score(int i) {
 void prune(int i) {
 
 }
-void pruning(Graph & g) {
+void pruning(Graph& g) {
 	int i = 0, Smax = 0, Smin = 0, nT = twig.size();
 	for (int j = i + 1; j < nT; j++) {
 		Smax += score_max(j);
@@ -591,12 +590,12 @@ void pruning() {
 vector<Match> matches_topK;
 typedef std::unordered_map<vector<Match>, vector<int>> collection;
 collection omega;
-void kTPM(Tree * query_twig,Graph & g_runtime,int topK) {
+void kTPM(Tree* query_twig, Graph& g_runtime, int topK) {
 	matches_topK = {};
 	int i = 0;
 	omega = {};
 	while (i < topK && !omega.empty()) {
-	
+
 	}
 
 }
@@ -612,7 +611,7 @@ void preProgress_tree() {
 		twig[i]->sortSubset_labelBased();
 	}
 }
-int main(int argc, char* argv[]){
+int main1(int argc, char* argv[]) {
 	//preProcess_Cit_Hepth();
 	//graph_proc();
 	//preProgress_tree();
@@ -620,7 +619,7 @@ int main(int argc, char* argv[]){
 	//vector<vector<Match>> M;
 	//LinkOrder(M);
 	//pruning();
-	test();
+	//test();
 	return 0;
 }
 
