@@ -8,17 +8,20 @@
 #include <stack>
 using namespace std;
 
-int default_weight = 999;
+static int num_v_datagraph = 27770;//图的顶点数
+static int num_labletype = 10;//标签类型数
+const static int default_weight = 999;
 const static int topK = 3;
+static int num_twig = 0;//小枝的数量
+static int num_max_outEdges = 0;
+
 string loc1 = "D:\\cit-HepTh\\Cit-HepTh";
 string loc2 = ".txt";
 string loc = loc1 + loc2;
 string loc_fixed = loc1 + "-fixed" + loc2;
 string loc_dic = loc1 + "-dic" + loc2;
 string loc_log = loc1 + "-log" + loc2;
-static int num_twig = 0;//小枝的数量
-static int num_max_outEdges = 0;
-static int num_v_datagraph = 0;//图的顶点数
+
 
 class Vertex {
 public:
@@ -46,7 +49,9 @@ public:
 	vector<vector<Edge*>> out_edges;
 	vector<vector<Vertex*>> vertex_vec_withlable;//save vertex* by lable
 
-	Graph() {
+	Graph():vertex_vec(vector<Vertex*>(num_v_datagraph)), in_edges(vector<vector<Edge*>>(num_v_datagraph)),
+		out_edges(vector<vector<Edge*>>(num_v_datagraph)), vertex_vec_withlable(vector<vector<Vertex*>>(num_labletype)) {
+		vertex_vec;
 		int x, y = 0;
 		string str;
 		ifstream infile;
